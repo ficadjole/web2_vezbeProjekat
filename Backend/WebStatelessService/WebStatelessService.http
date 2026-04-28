@@ -1,0 +1,6 @@
+@WebStatelessService_HostAddress = http://localhost:5157
+
+GET {{WebStatelessService_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
