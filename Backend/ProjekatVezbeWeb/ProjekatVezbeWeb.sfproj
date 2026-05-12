@@ -38,6 +38,7 @@
   <ItemGroup>
     <ProjectReference Include="..\BankStatefulService\BankStatefulService.csproj" />
     <ProjectReference Include="..\LibraryStatefulService\LibraryStatefulService.csproj" />
+    <ProjectReference Include="..\MailingStatefulService\MailingStatefulService.csproj" />
     <ProjectReference Include="..\ValidatorStatelessService\ValidatorStatelessService.csproj" />
     <ProjectReference Include="..\WebStatelessService\WebStatelessService.csproj">
       <ServiceLaunchUrl>http://localhost:{ServicePort}/swagger</ServiceLaunchUrl>

@@ -15,6 +15,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LibraryStatefulService", "L
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BankStatefulService", "BankStatefulService\BankStatefulService.csproj", "{01831FA5-6659-4B77-BD46-D0D220B0DC36}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MailingStatefulService", "MailingStatefulService\MailingStatefulService.csproj", "{0E513E9C-D819-481C-B907-A7E51F0CC190}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -75,6 +77,14 @@ Global
 		{01831FA5-6659-4B77-BD46-D0D220B0DC36}.Release|Any CPU.Build.0 = Release|Any CPU
 		{01831FA5-6659-4B77-BD46-D0D220B0DC36}.Release|x64.ActiveCfg = Release|Any CPU
 		{01831FA5-6659-4B77-BD46-D0D220B0DC36}.Release|x64.Build.0 = Release|Any CPU
+		{0E513E9C-D819-481C-B907-A7E51F0CC190}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0E513E9C-D819-481C-B907-A7E51F0CC190}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0E513E9C-D819-481C-B907-A7E51F0CC190}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{0E513E9C-D819-481C-B907-A7E51F0CC190}.Debug|x64.Build.0 = Debug|Any CPU
+		{0E513E9C-D819-481C-B907-A7E51F0CC190}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0E513E9C-D819-481C-B907-A7E51F0CC190}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0E513E9C-D819-481C-B907-A7E51F0CC190}.Release|x64.ActiveCfg = Release|Any CPU
+		{0E513E9C-D819-481C-B907-A7E51F0CC190}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

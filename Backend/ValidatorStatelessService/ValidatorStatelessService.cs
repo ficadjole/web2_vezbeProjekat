@@ -43,18 +43,18 @@ namespace ValidatorStatelessService
                 };
             }
 
-            if (buyBookRequestDTO.Book.Quantity < 0)
+            if (buyBookRequestDTO.Book.Quantity <= 0)
             {
                 return new ValidationResultDto
                 {
                     IsValid = false,
-                    Message = "Quantity cannot be negative."
+                    Message = "Quantity cannot be negative or zero."
                 };
             }
 
             var proxy = ServiceProxy.Create<ILibraryService>(new Uri("fabric:/ProjekatVezbeWeb/LibraryStatefulService"), new ServicePartitionKey(0));
 
-            var result = await proxy.BookAvailableAsync(buyBookRequestDTO.Book.Id);
+            var result = await proxy.BookAvailableAsync(buyBookRequestDTO.Book.Id,buyBookRequestDTO.Book.Quantity);
 
             if (!result)
             {
@@ -77,6 +77,10 @@ namespace ValidatorStatelessService
                     Message = "Payment failed. Insufficient funds."
                 };
             }
+
+            var mailingProxy = ServiceProxy.Create<IMailingService>(new Uri("fabric:/ProjekatVezbeWeb/MailingStatefulService"), new ServicePartitionKey(0));
+
+            await mailingProxy.PublishEvent(buyBookRequestDTO);
 
             return new ValidationResultDto
             {

@@ -14,6 +14,7 @@ export const buyBookAPI: IBuyBookAPI = {
           quantity: dto.quantity,
         },
         userId: dto.userId,
+        email: dto.email,
       });
 
       return res.data;

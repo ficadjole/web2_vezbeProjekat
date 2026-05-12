@@ -3,6 +3,7 @@ import Counter from "./Counter";
 import { buyBookAPI } from "../API/BuyBookAPI";
 import type { BuyBookRequestDTO } from "../DTOs/BuyBookRequestDTO";
 import UserDropDownList from "./UserDropDownList";
+import { Users } from "../data/usersList";
 
 export default function BuyBookForm() {
   const [buyBookFormData, setBuyBookFormData] = useState({
@@ -21,23 +22,26 @@ export default function BuyBookForm() {
       return;
     }
 
-    console.log("Podaci za slanje:", buyBookFormData);
-    alert(`Kupljeno: ${buyBookFormData.quantity}x ${buyBookFormData.title}`);
+    var user = Users.find((u) => u.userId === Number(buyBookFormData.userId));
 
+    console.log("Podaci za slanje:", buyBookFormData);
     try {
       const dto: BuyBookRequestDTO = {
-        id: 1,
+        id: 2,
         title: buyBookFormData.title,
         author: buyBookFormData.author,
         price: buyBookFormData.price,
         quantity: buyBookFormData.quantity,
         userId: buyBookFormData.userId,
+        email: user!.email,
       };
 
       const response = await buyBookAPI.buyBook(dto);
 
       if (response) {
-        alert("Kupili ste knjigu");
+        alert(
+          `Kupljeno: ${buyBookFormData.quantity}x ${buyBookFormData.title}`,
+        );
       } else {
         alert("Doslo je do greske");
       }

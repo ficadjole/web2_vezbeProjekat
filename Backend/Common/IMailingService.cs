@@ -7,10 +7,8 @@ using System.Threading.Tasks;
 
 namespace Common
 {
-    public interface ILibraryService : IService
+    public interface IMailingService : IService
     {
-
-        Task<bool> BookAvailableAsync(int id,int quantity);
-
+        public Task PublishEvent(BuyBookRequestDTO buyBookRequestDTO);
     }
 }
