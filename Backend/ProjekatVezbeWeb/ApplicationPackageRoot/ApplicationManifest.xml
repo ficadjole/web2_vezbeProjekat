@@ -2,10 +2,23 @@
 <ApplicationManifest xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" ApplicationTypeName="ProjekatVezbeWebType" ApplicationTypeVersion="1.0.0" xmlns="http://schemas.microsoft.com/2011/01/fabric">
   <Parameters>
     <Parameter Name="WebStatelessService_ASPNETCORE_ENVIRONMENT" DefaultValue="" />
+	  <Parameter Name="LibraryStatefulService_PartitionCount" DefaultValue="4"/>
+	  <Parameter Name="LibraryStatefulService_TargetReplicaSetSize" DefaultValue="3"/>
+	  <Parameter Name="LibraryStatefulService_MinReplicaSetSize" DefaultValue="3"/>
+	  <Parameter Name="BankStatefulService_PartitionCount" DefaultValue="4"/>
+	  <Parameter Name="PurchaseOrchestrator_PartitionCount" DefaultValue="4"/>
   </Parameters>
   <!-- Import the ServiceManifest from the ServicePackage. The ServiceManifestName and ServiceManifestVersion 
        should match the Name and Version attributes of the ServiceManifest element defined in the 
        ServiceManifest.xml file. -->
+  <ServiceManifestImport>
+    <ServiceManifestRef ServiceManifestName="ReportServicePkg" ServiceManifestVersion="1.0.0" />
+    <ConfigOverrides />
+  </ServiceManifestImport>
+  <ServiceManifestImport>
+    <ServiceManifestRef ServiceManifestName="PurchaseOrchestratorPkg" ServiceManifestVersion="1.0.0" />
+    <ConfigOverrides />
+  </ServiceManifestImport>
   <ServiceManifestImport>
     <ServiceManifestRef ServiceManifestName="MailingStatefulServicePkg" ServiceManifestVersion="1.0.0" />
     <ConfigOverrides />
@@ -29,4 +42,13 @@
     <ServiceManifestRef ServiceManifestName="ValidatorStatelessServicePkg" ServiceManifestVersion="1.0.0" />
     <ConfigOverrides />
   </ServiceManifestImport>
+	<DefaultServices>
+		<Service Name="LibraryStatefulService" ServicePackageActivationMode="ExclusiveProcess">
+			<StatefulService ServiceTypeName="LibraryStatefulServiceType" TargetReplicaSetSize="[LibraryStatefulService_TargetReplicaSetSize]" MinReplicaSetSize="[LibraryStatefulService_MinReplicaSetSize]">
+				<UniformInt64Partition PartitionCount="[LibraryStatefulService_PartitionCount]" LowKey="-9223372036854775808" HighKey="9223372036854775807" />
+			</StatefulService>
+		</Service>
+		
+		
+	</DefaultServices>
 </ApplicationManifest>
