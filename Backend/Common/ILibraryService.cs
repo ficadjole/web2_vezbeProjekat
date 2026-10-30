@@ -10,7 +10,7 @@ namespace Common
     public interface ILibraryService : IService
     {
 
-        Task<bool> BookAvailableAsync(int id,int quantity);
+        Task<Book> BookAvailableAsync(int id,int quantity);
 
     }
 }

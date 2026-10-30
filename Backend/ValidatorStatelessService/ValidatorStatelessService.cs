@@ -56,7 +56,7 @@ namespace ValidatorStatelessService
 
             var result = await proxy.BookAvailableAsync(buyBookRequestDTO.Book.Id,buyBookRequestDTO.Book.Quantity);
 
-            if (!result)
+            if (result.Id == 0)
             {
                     return new ValidationResultDto
                     {
@@ -67,7 +67,7 @@ namespace ValidatorStatelessService
 
             var bankProxy = ServiceProxy.Create<IBankService>(new Uri("fabric:/ProjekatVezbeWeb/BankStatefulService"), new ServicePartitionKey(0));
 
-            var paymentResult = await bankProxy.WithdrawAsync(buyBookRequestDTO.UserId, buyBookRequestDTO.Book.Price); //UserID == BankAccountID
+            var paymentResult = await bankProxy.WithdrawAsync(buyBookRequestDTO.UserId, result.Price); //UserID == BankAccountID
 
             if (!paymentResult)
             {

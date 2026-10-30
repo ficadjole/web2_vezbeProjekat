@@ -5,17 +5,20 @@ import type { IBuyBookAPI } from "./IBuyBookAPI";
 export const buyBookAPI: IBuyBookAPI = {
   async buyBook(dto: BuyBookRequestDTO): Promise<boolean> {
     try {
-      const res = await axios.post<boolean>("/api/Values", {
-        book: {
-          id: dto.id,
-          title: dto.title,
-          author: dto.author,
-          price: dto.price,
-          quantity: dto.quantity,
+      const res = await axios.post<boolean>(
+        "http://localhost:8453/api/Values",
+        {
+          book: {
+            id: dto.id,
+            title: dto.title,
+            author: dto.author,
+            price: dto.price,
+            quantity: dto.quantity,
+          },
+          userId: dto.userId,
+          email: dto.email,
         },
-        userId: dto.userId,
-        email: dto.email,
-      });
+      );
 
       return res.data;
     } catch (error) {

@@ -21,7 +21,7 @@ namespace LibraryStatefulService
             : base(context)
         { }
 
-        public async Task<bool> BookAvailableAsync(int id,int quantity)
+        public async Task<Book> BookAvailableAsync(int id,int quantity)
         {
             var libraryDictionary = await this.StateManager.GetOrAddAsync<IReliableDictionary<int, Book>>("library");
 
@@ -39,11 +39,11 @@ namespace LibraryStatefulService
                     await libraryDictionary.TryUpdateAsync(tx, id, book, result.Value);
                     await tx.CommitAsync();
 
-                    return true;
+                    return book;
 
                 }
                 await tx.CommitAsync();
-                return false;
+                return new Book();
                 
 
             }
