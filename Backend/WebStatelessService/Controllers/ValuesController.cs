@@ -11,7 +11,7 @@ namespace WebStatelessService.Controllers
     {
 
         [HttpPost]
-        public IActionResult Post([FromBody] BuyBookRequestDTO buyBookRequestDTO )
+        public IActionResult Post([FromBody] BuyBookRequestDTO buyBookRequestDTO)
         {
             // Here you can add logic to process the incoming value
             // For demonstration, we will just return the received value
@@ -36,6 +36,36 @@ namespace WebStatelessService.Controllers
 
             return Ok(new { ReceivedValue = buyBookRequestDTO });
 
+        }
+
+        [HttpGet("/books")]
+        public IActionResult GetBooks()
+        {
+            var proxy = ServiceProxy.Create<IValidator>(new Uri("fabric:/ProjekatVezbeWeb/ValidatorStatelessService"));
+            try
+            {
+                var books = proxy.GetAllBooksAsync().GetAwaiter().GetResult();
+                return Ok(books);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, $"Error communicating with ValidatorService: {ex.Message}");
+            }
+        }
+
+        [HttpGet("/accounts")]
+        public IActionResult GetAccounts()
+        {
+            var proxy = ServiceProxy.Create<IValidator>(new Uri("fabric:/ProjekatVezbeWeb/ValidatorStatelessService"));
+            try
+            {
+                var accounts = proxy.GetAllAccountsAsync().GetAwaiter().GetResult();
+                return Ok(accounts);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, $"Error communicating with ValidatorService: {ex.Message}");
+            }
         }
     }
 }

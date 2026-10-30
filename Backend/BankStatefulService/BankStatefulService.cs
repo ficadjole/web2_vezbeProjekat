@@ -21,15 +21,15 @@ namespace BankStatefulService
             : base(context)
         { }
 
-        public async Task<bool> WithdrawAsync(int accountId, double amount)
+        public async Task<bool> WithdrawAsync(string accountId, double amount)
         {
-            var bankDictionary = await this.StateManager.GetOrAddAsync<IReliableDictionary<int, BankAccount>>("bank");
+            var bankDictionary = await this.StateManager.GetOrAddAsync<IReliableDictionary<string, BankAccount>>("bank");
 
-            using(var tx = this.StateManager.CreateTransaction())
+            using (var tx = this.StateManager.CreateTransaction())
             {
                 var result = bankDictionary.TryGetValueAsync(tx, accountId);
-                
-                if(result.Result.HasValue && result.Result.Value.Balance >= amount)
+
+                if (result.Result.HasValue && result.Result.Value.Balance >= amount)
                 {
                     var account = result.Result.Value;
                     account.Balance -= amount;
@@ -61,15 +61,15 @@ namespace BankStatefulService
             return this.CreateServiceRemotingReplicaListeners();
         }
 
-        private void AddData()
+        private async Task AddData()
         {
-            var bankDictionary = this.StateManager.GetOrAddAsync<IReliableDictionary<int, BankAccount>>("bank");
-            using(var tx = this.StateManager.CreateTransaction())
+            var bankDictionary = this.StateManager.GetOrAddAsync<IReliableDictionary<string, BankAccount>>("bank");
+            using (var tx = this.StateManager.CreateTransaction())
             {
-                bankDictionary.Result.AddAsync(tx, 1, new BankAccount { Id = 1, Owner = "Pera Peric", Balance = 1000 });
-                bankDictionary.Result.AddAsync(tx, 2, new BankAccount { Id = 2, Owner = "Misa Misic", Balance = 2000 });
-                bankDictionary.Result.AddAsync(tx, 3, new BankAccount { Id = 3, Owner = "Nikolaj Romanov", Balance = 3000 });
-                tx.CommitAsync();
+                await bankDictionary.Result.AddAsync(tx, "1", new BankAccount { Id = "1", Owner = "Pera Peric", Balance = 1000 });
+                await bankDictionary.Result.AddAsync(tx, "2", new BankAccount { Id = "2", Owner = "Misa Misic", Balance = 2000 });
+                await bankDictionary.Result.AddAsync(tx, "3", new BankAccount { Id = "3", Owner = "Nikolaj Romanov", Balance = 3000 });
+                await tx.CommitAsync();
             }
         }
 
@@ -85,8 +85,8 @@ namespace BankStatefulService
 
             var myDictionary = await this.StateManager.GetOrAddAsync<IReliableDictionary<string, long>>("myDictionary");
 
-            AddData();
-
+            //await AddData();
+            await myDictionary.ClearAsync();
             while (true)
             {
                 cancellationToken.ThrowIfCancellationRequested();
@@ -106,6 +106,51 @@ namespace BankStatefulService
                 }
 
                 await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken);
+            }
+        }
+
+        public Task<long> GetCountAsync()
+        {
+            var bankDictionary = this.StateManager.GetOrAddAsync<IReliableDictionary<string, BankAccount>>("bank");
+            using (var tx = this.StateManager.CreateTransaction())
+            {
+                var count = bankDictionary.Result.GetCountAsync(tx);
+                return count;
+
+            }
+        }
+
+        public async Task<bool> AddAccount(BankAccount account)
+        {
+            var bankDictionary = this.StateManager.GetOrAddAsync<IReliableDictionary<string, BankAccount>>("bank");
+            using (var tx = this.StateManager.CreateTransaction())
+            {
+                var result = await bankDictionary.Result.TryAddAsync(tx, account.Id, account);
+                await tx.CommitAsync();
+                return result;
+
+            }
+        }
+
+        public async Task<List<BankAccount>> GetAllAccountsAsync()
+        {
+            var bankDictionary = this.StateManager.GetOrAddAsync<IReliableDictionary<string, BankAccount>>("bank");
+            using (var tx = this.StateManager.CreateTransaction())
+            {
+                var accounts = new List<BankAccount>();
+
+                var enumerator = await bankDictionary.Result.CreateEnumerableAsync(tx);
+
+                var enumeratorResult = enumerator.GetAsyncEnumerator();
+
+                while (await enumeratorResult.MoveNextAsync(CancellationToken.None))
+                {
+                    var current = enumeratorResult.Current;
+                    accounts.Add(current.Value);
+                }
+                await tx.CommitAsync();
+
+                return accounts;
             }
         }
     }

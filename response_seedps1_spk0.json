@@ -1,0 +1,60 @@
+{
+  "result": [
+    {
+      "serviceName": "LibraryStatefulService",
+      "partitionId": "1b8cd817-1383-4fcf-9356-621d62ac6ef7",
+      "partitionKey": -1,
+      "lowKey": -4611686018427388000,
+      "getCount": 3
+    },
+    {
+      "serviceName": "LibraryStatefulService",
+      "partitionId": "3f99d792-f223-482c-8073-f2860629b328",
+      "partitionKey": 9223372036854776000,
+      "lowKey": 4611686018427388000,
+      "getCount": 3
+    },
+    {
+      "serviceName": "LibraryStatefulService",
+      "partitionId": "5785c5ab-3f85-49d9-b5d0-25613a072fb5",
+      "partitionKey": 4611686018427388000,
+      "lowKey": 0,
+      "getCount": 23
+    },
+    {
+      "serviceName": "LibraryStatefulService",
+      "partitionId": "76aa96f9-368d-4b2a-8fca-3d0fcb855135",
+      "partitionKey": -4611686018427388000,
+      "lowKey": -9223372036854776000,
+      "getCount": 3
+    },
+    {
+      "serviceName": "BankStatefulService",
+      "partitionId": "1d008a20-6f0d-4dec-ba1f-4a55317d96da",
+      "partitionKey": 4611686018427388000,
+      "lowKey": 0,
+      "getCount": 14
+    },
+    {
+      "serviceName": "BankStatefulService",
+      "partitionId": "f3de098c-ffc4-41e2-ac52-be3203eeb5bd",
+      "partitionKey": -1,
+      "lowKey": -4611686018427388000,
+      "getCount": 3
+    },
+    {
+      "serviceName": "BankStatefulService",
+      "partitionId": "3e264ca6-63ae-460e-960d-1bcff49f0721",
+      "partitionKey": 9223372036854776000,
+      "lowKey": 4611686018427388000,
+      "getCount": 3
+    },
+    {
+      "serviceName": "BankStatefulService",
+      "partitionId": "ba1ccaf8-cdaf-415e-93cc-ef503bd9249a",
+      "partitionKey": -4611686018427388000,
+      "lowKey": -9223372036854776000,
+      "getCount": 3
+    }
+  ]
+}

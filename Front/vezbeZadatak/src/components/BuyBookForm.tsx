@@ -9,7 +9,7 @@ import { Books } from "../data/booksList";
 
 export default function BuyBookForm() {
   const [buyBookFormData, setBuyBookFormData] = useState({
-    bookId: 0,
+    bookId: "",
     quantity: 1,
     userId: 0,
   });
@@ -23,7 +23,7 @@ export default function BuyBookForm() {
     event.preventDefault();
     setMessage(null); // Resetujemo prethodnu poruku
 
-    if (buyBookFormData.bookId === 0) {
+    if (buyBookFormData.bookId === "") {
       setMessage({ text: "Molimo izaberite knjigu iz liste.", type: "error" });
       return;
     }
@@ -41,9 +41,7 @@ export default function BuyBookForm() {
       return;
     }
 
-    const selectedBook = Books.find(
-      (b) => b.id === Number(buyBookFormData.bookId),
-    );
+    const selectedBook = Books.find((b) => b.id === buyBookFormData.bookId);
     const selectedUser = Users.find(
       (u) => u.userId === Number(buyBookFormData.userId),
     );
@@ -76,7 +74,7 @@ export default function BuyBookForm() {
           type: "success",
         });
 
-        setBuyBookFormData({ bookId: 0, quantity: 1, userId: 0 });
+        setBuyBookFormData({ bookId: "", quantity: 1, userId: 0 });
       } else {
         setMessage({
           text: "Došlo je do greške na serveru prilikom obrade porudžbine.",
@@ -100,7 +98,7 @@ export default function BuyBookForm() {
     setBuyBookFormData((prev) => ({ ...prev, userId: newUserId }));
   };
 
-  const handleBookChange = (newBookId: number) => {
+  const handleBookChange = (newBookId: string) => {
     setBuyBookFormData((prev) => ({ ...prev, bookId: newBookId }));
   };
 

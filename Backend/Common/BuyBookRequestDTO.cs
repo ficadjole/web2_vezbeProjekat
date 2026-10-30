@@ -11,7 +11,7 @@ namespace Common
     public class BuyBookRequestDTO
     {
        [DataMember] public Book Book { get; set; } = new Book();
-       [DataMember] public int UserId { get; set; }
+       [DataMember] public string UserId { get; set; } = string.Empty;
 
         [DataMember] public string Email { get; set; } = string.Empty;
     }

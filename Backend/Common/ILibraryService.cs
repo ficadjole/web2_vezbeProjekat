@@ -10,7 +10,15 @@ namespace Common
     public interface ILibraryService : IService
     {
 
-        Task<Book> BookAvailableAsync(int id,int quantity);
+        Task<Book> BookAvailableAsync(string id,int quantity);
+        Task<long> GetCountAsync();
 
+        Task<bool> AddBook(Book book);
+
+        Task<List<Book>> GetAllBooksAsync();
+
+        Task<decimal> ReserveAsync(Guid txId, string bookId, int quantity);
+
+        Task<ConsistencyCheckDTO> ConsistencyCheck(string bookId);
     }
 }

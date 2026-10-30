@@ -9,10 +9,10 @@
     <Parameter Name="MailingStatefulService_PartitionCount" DefaultValue="1" />
     <Parameter Name="MailingStatefulService_TargetReplicaSetSize" DefaultValue="3" />
     <Parameter Name="BankStatefulService_MinReplicaSetSize" DefaultValue="3" />
-    <Parameter Name="BankStatefulService_PartitionCount" DefaultValue="1" />
+    <Parameter Name="BankStatefulService_PartitionCount" DefaultValue="4" />
     <Parameter Name="BankStatefulService_TargetReplicaSetSize" DefaultValue="3" />
     <Parameter Name="LibraryStatefulService_MinReplicaSetSize" DefaultValue="3" />
-    <Parameter Name="LibraryStatefulService_PartitionCount" DefaultValue="1" />
+    <Parameter Name="LibraryStatefulService_PartitionCount" DefaultValue="4" />
     <Parameter Name="LibraryStatefulService_TargetReplicaSetSize" DefaultValue="3" />
     <Parameter Name="WebStatelessService_InstanceCount" DefaultValue="-1" />
     <Parameter Name="ValidatorStatelessService_InstanceCount" DefaultValue="-1" />

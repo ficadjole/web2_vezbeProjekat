@@ -9,7 +9,11 @@ namespace Common
 {
     public interface IBankService : IService
     {
-        Task<bool> WithdrawAsync(int accountId, double amount);
+        Task<bool> WithdrawAsync(string accountId, double amount);
+        Task<long> GetCountAsync();
 
+        Task<bool> AddAccount(BankAccount account);
+
+        Task<List<BankAccount>> GetAllAccountsAsync();
     }
 }

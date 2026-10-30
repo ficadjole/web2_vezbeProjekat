@@ -1,5 +1,5 @@
 export interface BuyBookRequestDTO {
-  id: number;
+  id: string;
   title: string;
   author: string;
   price: number;

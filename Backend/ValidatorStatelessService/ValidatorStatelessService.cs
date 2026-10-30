@@ -18,9 +18,102 @@ namespace ValidatorStatelessService
     /// </summary>
     internal sealed class ValidatorStatelessService : StatelessService, IValidator
     {
+        private FabricClient fabricClient = new FabricClient();
+
         public ValidatorStatelessService(StatelessServiceContext context)
             : base(context)
-        { }
+        { 
+        }
+
+   
+
+        public async Task<IEnumerable<DiagnosticResultDto>> DiagnosticAsync()
+        {
+            var partitionsForLibrary = await fabricClient.QueryManager.GetPartitionListAsync(new Uri("fabric:/ProjekatVezbeWeb/LibraryStatefulService"));
+            var partitionsForBank = await fabricClient.QueryManager.GetPartitionListAsync(new Uri("fabric:/ProjekatVezbeWeb/BankStatefulService"));
+
+            var diagnosticResults = new List<DiagnosticResultDto>();
+
+            foreach (var partition in partitionsForLibrary) {
+
+                var partitionId = partition.PartitionInformation.Id.ToString();
+                var int64Info = partition.PartitionInformation as Int64RangePartitionInformation;
+                if(int64Info == null)
+                {
+                    throw new InvalidOperationException("Partition information is not of type Int64RangePartitionInformation.");
+                }
+                var lowKey = int64Info.LowKey;
+                var highKey = int64Info.HighKey;
+                var proxy = ServiceProxy.Create<ILibraryService>(new Uri("fabric:/ProjekatVezbeWeb/LibraryStatefulService"), new ServicePartitionKey(lowKey));
+                var count = await proxy.GetCountAsync();
+
+                diagnosticResults.Add(new DiagnosticResultDto
+                {
+                    ServiceName = "LibraryStatefulService",
+                    PartitionId = partitionId,
+                    PartitionKey = highKey,
+                    LowKey = lowKey,
+                    GetCount = count
+                });
+            }
+
+            foreach (var partition in partitionsForBank)
+            {
+                var partitionId = partition.PartitionInformation.Id.ToString();
+                var int64Info = partition.PartitionInformation as Int64RangePartitionInformation;
+                if (int64Info == null)
+                {
+                    throw new InvalidOperationException("Partition information is not of type Int64RangePartitionInformation.");
+                }
+                var lowKey = int64Info.LowKey;
+                var highKey = int64Info.HighKey;
+                var proxy = ServiceProxy.Create<IBankService>(new Uri("fabric:/ProjekatVezbeWeb/BankStatefulService"), new ServicePartitionKey(lowKey));
+                var count = await proxy.GetCountAsync();
+
+                diagnosticResults.Add(new DiagnosticResultDto
+                {
+                    ServiceName = "BankStatefulService",
+                    PartitionId = partitionId,
+                    PartitionKey = highKey,
+                    LowKey = lowKey,
+                    GetCount = count
+                });
+            }
+
+            return diagnosticResults;
+
+        }
+
+        public async Task<List<BankAccount>> GetAllAccountsAsync()
+        {
+            var paritionsForBank = await fabricClient.QueryManager.GetPartitionListAsync(new Uri("fabric:/ProjekatVezbeWeb/BankStatefulService"));
+
+            var calls = paritionsForBank.Select(p =>
+            {
+                long lowKey = ((Int64RangePartitionInformation)p.PartitionInformation).LowKey;
+                var proxy = ServiceProxy.Create<IBankService>(new Uri("fabric:/ProjekatVezbeWeb/BankStatefulService"), new ServicePartitionKey(lowKey));
+                return proxy.GetAllAccountsAsync();
+            });
+
+            var results = await Task.WhenAll(calls);
+            return results.SelectMany(r => r).OrderBy(b => b.Owner).ToList();
+        }
+
+        public async Task<List<Book>> GetAllBooksAsync()
+        {
+            var paritionsForLibrary =await fabricClient.QueryManager.GetPartitionListAsync(new Uri("fabric:/ProjekatVezbeWeb/LibraryStatefulService"));
+
+            var calls = paritionsForLibrary.Select(p =>
+            {
+                long lowKey = ((Int64RangePartitionInformation)p.PartitionInformation).LowKey;
+                var proxy = ServiceProxy.Create<ILibraryService>(new Uri("fabric:/ProjekatVezbeWeb/LibraryStatefulService"), new ServicePartitionKey(lowKey));
+                return proxy.GetAllBooksAsync();
+            });
+
+            var results = await Task.WhenAll(calls);
+
+            return results.SelectMany(r => r).OrderBy(b => b.Title).ToList();
+        }
 
         public async Task<ValidationResultDto> ValidateAsync(BuyBookRequestDTO buyBookRequestDTO)
         {
@@ -56,7 +149,7 @@ namespace ValidatorStatelessService
 
             var result = await proxy.BookAvailableAsync(buyBookRequestDTO.Book.Id,buyBookRequestDTO.Book.Quantity);
 
-            if (result.Id == 0)
+            if (result.Id == "")
             {
                     return new ValidationResultDto
                     {
