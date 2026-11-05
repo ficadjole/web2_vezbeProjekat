@@ -17,8 +17,11 @@ namespace Common
 
         Task<List<Book>> GetAllBooksAsync();
 
-        Task<decimal> ReserveAsync(Guid txId, string bookId, int quantity);
+        Task<Reservation> ReserveAsync(Guid txId);
 
         Task<ConsistencyCheckDTO> ConsistencyCheck(string bookId);
+
+        Task ConfirmAsync(Guid txId,string bookId, int quantity);
+        Task ReleaseaAsync(Guid txId);
     }
 }

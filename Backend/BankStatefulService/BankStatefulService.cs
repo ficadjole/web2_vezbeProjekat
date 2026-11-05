@@ -9,6 +9,7 @@ using Microsoft.ServiceFabric.Services.Communication.Runtime;
 using Microsoft.ServiceFabric.Services.Runtime;
 using Microsoft.ServiceFabric.Services.Remoting.Runtime;
 using Common;
+using BankStatefulService.Exceptions;
 
 namespace BankStatefulService
 {
@@ -151,6 +152,77 @@ namespace BankStatefulService
                 await tx.CommitAsync();
 
                 return accounts;
+            }
+        }
+
+        public async Task ChargeAsync(Guid TxId, string userId, double amount)
+        {
+
+            var bankDictionary = await this.StateManager.GetOrAddAsync<IReliableDictionary<string, BankAccount>>("bank");
+
+            var charges = await this.StateManager.GetOrAddAsync<IReliableDictionary<Guid, Charge>>("charges");
+
+            using (var tx = this.StateManager.CreateTransaction()) {
+
+
+                var existing = await charges.TryGetValueAsync(tx, TxId, LockMode.Update);
+
+                if (existing.HasValue)
+                    return;
+
+                var acc = await bankDictionary.TryGetValueAsync(tx,userId, LockMode.Update);
+
+                if (!acc.HasValue)
+                    throw new AccountNotFoundException($"Account for userID: {userId} is not found");
+
+                if (acc.Value.Balance < amount)
+                    throw new InsufficientFundsException($"Account: {userId} does not have enough funds");
+
+                acc.Value.Balance -= amount;
+
+                await bankDictionary.SetAsync(tx, userId, acc.Value);
+
+                await charges.AddAsync(tx, TxId, new Charge(TxId, userId, amount, ChargeStatus.Charged ));
+
+                await tx.CommitAsync();
+            
+            }
+        }
+
+        public async Task  RefundAsync(Guid TxId, string userId)
+        {
+            var bankDictionary = await this.StateManager.GetOrAddAsync<IReliableDictionary<string, BankAccount>>("bank");
+
+            var charges = await this.StateManager.GetOrAddAsync<IReliableDictionary<Guid, Charge>>("charges");
+
+            using (var tx = this.StateManager.CreateTransaction())
+            {
+
+                var existing = await charges.TryGetValueAsync(tx, TxId, LockMode.Update);
+
+                if (!existing.HasValue)
+                {
+                    await charges.TryAddAsync(tx, TxId, new Charge(TxId, userId, 0, ChargeStatus.Refunded));
+                }
+                else if(existing.Value.status == ChargeStatus.Charged)
+                {
+
+                    var acc = await bankDictionary.TryGetValueAsync(tx, userId, LockMode.Update);
+
+                    if (!acc.HasValue)
+                        throw new AccountNotFoundException($"Account for userID: {userId} is not found");
+
+
+                    acc.Value.Balance += existing.Value.amount;
+
+                    await bankDictionary.SetAsync(tx, userId, acc.Value);
+
+                    await charges.SetAsync(tx, TxId, existing.Value with { status = ChargeStatus.Refunded});
+
+                }
+
+                await tx.CommitAsync();
+
             }
         }
     }

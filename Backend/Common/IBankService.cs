@@ -15,5 +15,9 @@ namespace Common
         Task<bool> AddAccount(BankAccount account);
 
         Task<List<BankAccount>> GetAllAccountsAsync();
+
+        Task ChargeAsync(Guid TxId, string userId, double amount);
+
+        Task RefundAsync(Guid TxId, string userId);
     }
 }

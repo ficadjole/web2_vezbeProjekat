@@ -4,6 +4,7 @@ using System.Fabric;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Transactions;
 using Common;
 using Microsoft.ServiceFabric.Data.Collections;
 using Microsoft.ServiceFabric.Services.Communication.Runtime;
@@ -149,38 +150,6 @@ namespace LibraryStatefulService
             }
         }
 
-        public async Task<decimal> ReserveAsync(Guid txId, string bookId, int quantity)
-        {
-            var books = await this.StateManager.GetOrAddAsync<IReliableDictionary<string, Book>>("library");
-            var reservations = await this.StateManager.GetOrAddAsync<IReliableDictionary<Guid, Reservation>>("reservations");
-
-            using(var tx = this.StateManager.CreateTransaction())
-            {
-                var book = await books.TryGetValueAsync(tx,bookId, LockMode.Update);
-
-                if(!book.HasValue) throw new BookNotFoundException($"Book with ID: {bookId} not found");
-
-                if (book.Value.Quantity < quantity) throw new OutOfStockException($"Book with ID: {bookId} is out of stock");
-
-                await books.SetAsync(tx, bookId, book.Value with
-                {
-                    Quantity = book.Value.Quantity - quantity,
-                    Reserved = book.Value.Reserved + quantity
-                });
-
-                await reservations.AddAsync(tx, txId, new Reservation
-                {
-                    TxId = txId,
-                    BookId = bookId,
-                    Quantity = quantity,
-                    Price = (decimal)book.Value.Price,
-                    Status = ReservationStatus.Reserved
-                });
-
-                await tx.CommitAsync();
-                return (decimal)book.Value.Price;
-            }
-        }
 
         public async Task<ConsistencyCheckDTO> ConsistencyCheck(string bookId)
         {
@@ -217,6 +186,93 @@ namespace LibraryStatefulService
                     IsConsistent = isConsistent
                 };
 
+            }
+        }
+
+        public async Task<Reservation> ReserveAsync(Guid txId)
+        {
+            var reservations = await this.StateManager.GetOrAddAsync<IReliableDictionary<Guid, Reservation>>("reservations");
+
+            using(var tx = this.StateManager.CreateTransaction())
+            {
+
+                var reservationResult = await reservations.TryGetValueAsync(tx, txId);
+
+                if (reservationResult.HasValue)
+                    throw new NoReservationException($"Reservation with txId: {txId} does not exist");
+
+                await tx.CommitAsync();
+
+                return reservationResult.Value;
+            }
+        }
+        public async Task ConfirmAsync(Guid txId, string bookId, int quantity)
+        {
+            var books = await this.StateManager.GetOrAddAsync<IReliableDictionary<string, Book>>("library");
+            var reservations = await this.StateManager.GetOrAddAsync<IReliableDictionary<Guid, Reservation>>("reservations");
+
+            using(var tx = StateManager.CreateTransaction())
+            {
+                var bookResult = await books.TryGetValueAsync(tx, bookId, LockMode.Update);
+
+                if(!bookResult.HasValue)
+                     throw new BookNotFoundException($"Book with ID: {bookId} not found");
+
+                var reservationsResult = await reservations.TryGetValueAsync(tx, txId, LockMode.Update);
+
+                if (reservationsResult.HasValue)
+                    return;
+
+                if (bookResult.Value.Quantity < quantity) throw new OutOfStockException($"Book with ID: {bookId} is out of stock");
+
+                await books.SetAsync(tx, bookId, bookResult.Value with
+                {
+                    Quantity = bookResult.Value.Quantity - quantity,
+                    Reserved = bookResult.Value.Reserved + quantity
+                });
+
+                await reservations.AddAsync(tx, txId, new Reservation
+                {
+                    TxId = txId,
+                    BookId = bookId,
+                    Quantity = quantity,
+                    Price = (decimal)bookResult.Value.Price,
+                    Status = ReservationStatus.Reserved
+                });
+
+                await tx.CommitAsync();
+
+
+
+            }
+
+
+        }
+
+        public async Task ReleaseaAsync(Guid txId)
+        {
+            var books = await this.StateManager.GetOrAddAsync<IReliableDictionary<string, Book>>("library");
+            var reservations = await this.StateManager.GetOrAddAsync<IReliableDictionary<Guid, Reservation>>("reservations");
+
+            using(var tx = StateManager.CreateTransaction())
+            {
+                var reservationResult = await reservations.TryGetValueAsync(tx, txId);
+
+                if (!reservationResult.HasValue)
+                {
+                    await reservations.TryAddAsync(tx,txId, new Reservation(txId,"",0,0,ReservationStatus.Released));
+                }
+                else if (reservationResult.Value.Status == ReservationStatus.Reserved)
+                {
+                    await reservations.SetAsync(tx, txId, reservationResult.Value with { Status = ReservationStatus.Released });
+
+                    var bookResult = await books.TryGetValueAsync(tx, reservationResult.Value.BookId);
+
+                    await books.SetAsync(tx, bookResult.Value.Id, bookResult.Value with { Quantity += reservationResult.Value.Quantity });
+
+                }
+
+                await tx.CommitAsync();
             }
         }
     }
