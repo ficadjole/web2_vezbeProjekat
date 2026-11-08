@@ -185,7 +185,9 @@ namespace BankStatefulService
                 await charges.AddAsync(tx, TxId, new Charge(TxId, userId, amount, ChargeStatus.Charged ));
 
                 await tx.CommitAsync();
-            
+
+               // await Task.Delay(10000); // Simulate some processing time
+
             }
         }
 
@@ -223,6 +225,24 @@ namespace BankStatefulService
 
                 await tx.CommitAsync();
 
+            }
+        }
+
+        public async Task<BankAccount> GetAccount(string accountId)
+        {
+            var bankDictionary = this.StateManager.GetOrAddAsync<IReliableDictionary<string, BankAccount>>("bank");
+
+            using (var tx = this.StateManager.CreateTransaction())
+            {
+                var result = await bankDictionary.Result.TryGetValueAsync(tx, accountId);
+                if (result.HasValue)
+                {
+                    return result.Value;
+                }
+                else
+                {
+                    throw new AccountNotFoundException($"Account with ID: {accountId} is not found");
+                }
             }
         }
     }

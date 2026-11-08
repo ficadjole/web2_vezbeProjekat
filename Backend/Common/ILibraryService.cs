@@ -16,12 +16,13 @@ namespace Common
         Task<bool> AddBook(Book book);
 
         Task<List<Book>> GetAllBooksAsync();
+        Task<Book> GetBook(string bookId);
 
-        Task<Reservation> ReserveAsync(Guid txId);
+        Task<double> ReserveAsync(Guid txId, string bookId, int quantity);
 
         Task<ConsistencyCheckDTO> ConsistencyCheck(string bookId);
 
-        Task ConfirmAsync(Guid txId,string bookId, int quantity);
+        Task ConfirmAsync(Guid txId);
         Task ReleaseaAsync(Guid txId);
     }
 }

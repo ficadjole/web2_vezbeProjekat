@@ -10,33 +10,31 @@ namespace WebStatelessService.Controllers
     public class ValuesController : ControllerBase
     {
 
-        [HttpPost]
-        public IActionResult Post([FromBody] BuyBookRequestDTO buyBookRequestDTO)
-        {
-            // Here you can add logic to process the incoming value
-            // For demonstration, we will just return the received value
+        //[HttpPost]
+        //public IActionResult Post([FromBody] BuyBookRequestDTO buyBookRequestDTO)
+        //{
 
-            var proxy = ServiceProxy.Create<IValidator>(new Uri("fabric:/ProjekatVezbeWeb/ValidatorStatelessService"));
+        //    var proxy = ServiceProxy.Create<IValidator>(new Uri("fabric:/ProjekatVezbeWeb/ValidatorStatelessService"));
 
-            try
-            {
+        //    try
+        //    {
 
-                var validationResult = proxy.ValidateAsync(buyBookRequestDTO).GetAwaiter().GetResult();
-                if (!validationResult.IsValid)
-                {
-                    return BadRequest(new { Message = "Validation failed", Errors = validationResult.Message });
-                }
+        //        var validationResult = proxy.ValidateAsync(buyBookRequestDTO).GetAwaiter().GetResult();
+        //        if (!validationResult.IsValid)
+        //        {
+        //            return BadRequest(new { Message = "Validation failed", Errors = validationResult.Message });
+        //        }
 
-            }
-            catch (Exception ex)
-            {
-                // Handle any exceptions that may occur during service communication
-                return StatusCode(StatusCodes.Status500InternalServerError, $"Error communicating with ValidatorService: {ex.Message}");
-            }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        // Handle any exceptions that may occur during service communication
+        //        return StatusCode(StatusCodes.Status500InternalServerError, $"Error communicating with ValidatorService: {ex.Message}");
+        //    }
 
-            return Ok(new { ReceivedValue = buyBookRequestDTO });
+        //    return Ok(new { ReceivedValue = buyBookRequestDTO });
 
-        }
+        //}
 
         [HttpGet("/books")]
         public IActionResult GetBooks()

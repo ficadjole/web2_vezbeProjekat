@@ -81,16 +81,16 @@ namespace MailingStatefulService
                             Credentials = new NetworkCredential("velemirfilip@gmail.com", "cqmz fooh vtkk zzse")
                         };
 
-                        var message = new MailMessage(new MailAddress("velemirfilip@gmail.com", "Filip Velemir"), new MailAddress($"{result.Value.Email}", "Kupac"));
+                        //var message = new MailMessage(new MailAddress("velemirfilip@gmail.com", "Filip Velemir"), new MailAddress($"{result.Value.Email}", "Kupac"));
 
 
 
 
-                        message.Subject = "Kupovina uspesno obavljena";
-                        message.Body = $"Poštovani,\r\nObavještavamo Vas da je Vaša kupovina uspješno realizovana.\r\nDetalji kupovine:\r\n Naziv knjige: {result.Value.Book.Title}\r\n Količina: {result.Value.Book.Quantity}\r\n" +
-                            $" Ukupan iznos: {result.Value.Book.Quantity * result.Value.Book.Price} KM\r\n Datum i vrijeme: {DateTime.Now}\r\nHvala Vam na ukazanom povjerenju.\r\nSrdačan pozdrav,\r\n BookStore tim\r\n";
+                        //message.Subject = "Kupovina uspesno obavljena";
+                        //message.Body = $"Poštovani,\r\nObavještavamo Vas da je Vaša kupovina uspješno realizovana.\r\nDetalji kupovine:\r\n Naziv knjige: {result.Value.Book.Title}\r\n Količina: {result.Value.Book.Quantity}\r\n" +
+                        //    $" Ukupan iznos: {result.Value.Book.Quantity * result.Value.Book.Price} KM\r\n Datum i vrijeme: {DateTime.Now}\r\nHvala Vam na ukazanom povjerenju.\r\nSrdačan pozdrav,\r\n BookStore tim\r\n";
 
-                        client.Send(message);
+                        //client.Send(message);
 
 
                         await tx.CommitAsync();

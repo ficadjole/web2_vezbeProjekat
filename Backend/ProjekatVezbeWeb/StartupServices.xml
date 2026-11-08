@@ -3,7 +3,7 @@
   <Parameters>
     <Parameter Name="ReportService_InstanceCount" DefaultValue="-1" />
     <Parameter Name="PurchaseOrchestrator_MinReplicaSetSize" DefaultValue="3" />
-    <Parameter Name="PurchaseOrchestrator_PartitionCount" DefaultValue="1" />
+    <Parameter Name="PurchaseOrchestrator_PartitionCount" DefaultValue="4" />
     <Parameter Name="PurchaseOrchestrator_TargetReplicaSetSize" DefaultValue="3" />
     <Parameter Name="MailingStatefulService_MinReplicaSetSize" DefaultValue="3" />
     <Parameter Name="MailingStatefulService_PartitionCount" DefaultValue="1" />

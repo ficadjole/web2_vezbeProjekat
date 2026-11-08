@@ -32,30 +32,30 @@ namespace WebStatelessService.Controllers
             return Ok();
         }
 
-        [HttpPost("{bookId}/reservations")]
-        public async Task<IActionResult> Reservation(string bookId,[FromBody] ReservationDTO reservation)
-        {
-            if(reservation == null || reservation.Quantity <= 0)
-            {
-                return BadRequest("Invalid reservation data.");
-            }
+        //[HttpPost("{bookId}/reservations")]
+        //public async Task<IActionResult> Reservation(string bookId,[FromBody] ReservationDTO reservation)
+        //{
+        //    if(reservation == null || reservation.Quantity <= 0)
+        //    {
+        //        return BadRequest("Invalid reservation data.");
+        //    }
 
-            var serviceUri = new Uri("fabric:/ProjekatVezbeWeb/LibraryStatefulService");
+        //    var serviceUri = new Uri("fabric:/ProjekatVezbeWeb/LibraryStatefulService");
 
-            var proxy = ServiceProxy.Create<ILibraryService>(serviceUri, new ServicePartitionKey(PartitionKeyHelper.ForBook(bookId)));
+        //    var proxy = ServiceProxy.Create<ILibraryService>(serviceUri, new ServicePartitionKey(PartitionKeyHelper.ForBook(bookId)));
 
-            var newGuid = Guid.NewGuid();
+        //    var newGuid = Guid.NewGuid();
 
-            var reservationResult = await proxy.ReserveAsync(newGuid, bookId, reservation.Quantity);
+        //    var reservationResult = await proxy.ReserveAsync(newGuid, bookId, reservation.Quantity);
 
-            if (reservationResult == 0)
-            {
-                return StatusCode(StatusCodes.Status500InternalServerError, "Failed to reserve the book.");
-            }
+        //    if (reservationResult == 0)
+        //    {
+        //        return StatusCode(StatusCodes.Status500InternalServerError, "Failed to reserve the book.");
+        //    }
 
-            return Ok(reservationResult);
+        //    return Ok(reservationResult);
 
-        }
+        //}
 
         [HttpGet("{bookId}/consistency")]
         public async Task<IActionResult> ConsistencyCheck(string bookId)
@@ -73,6 +73,19 @@ namespace WebStatelessService.Controllers
             {
                 return StatusCode(StatusCodes.Status500InternalServerError, consistencyResult);
             }
+        }
+
+        [HttpGet("{bookId}")]
+        public async Task<IActionResult> Get(string bookId)
+        {
+            var serviceUri = new Uri("fabric:/ProjekatVezbeWeb/LibraryStatefulService");
+            var proxy = ServiceProxy.Create<ILibraryService>(serviceUri, new ServicePartitionKey(PartitionKeyHelper.ForBook(bookId)));
+            var book = await proxy.GetBook(bookId);
+            if (book == null)
+            {
+                return NotFound();
+            }
+            return Ok(book);
         }
     }
 }

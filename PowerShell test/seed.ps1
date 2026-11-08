@@ -1,5 +1,8 @@
 $api = "http://localhost:8453/api"
-$books = 1..20 | ForEach-Object { @{ id = "978-86-521-{0:D4}-0" -f $_; title = "Knjiga $_"; author = "Autor $_"; price = 10 + $_; quantity = 50 } }
+$books = 1..20 | ForEach-Object { 
+    $bookId = "978-86-521-{0:D4}-0" -f $_
+    @{ id = $bookId; title = "Knjiga $_"; author = "Autor $_"; price = 10 + $_; quantity = if($bookId -eq "978-86-521-0002-0") {10} else {50}; } 
+    }
 foreach ($b in $books) { Invoke-RestMethod -Method Post -Uri "$api/Books" -ContentType "application/json" -Body ($b | ConvertTo-Json) }
 foreach ($i in 1..10) {
     $acc = @{ id = "user$i"; owner = "Klijent $i"; balance = 1000 } | ConvertTo-Json

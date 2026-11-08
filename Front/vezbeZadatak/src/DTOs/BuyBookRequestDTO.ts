@@ -4,6 +4,6 @@ export interface BuyBookRequestDTO {
   author: string;
   price: number;
   quantity: number;
-  userId: number;
+  userId: string;
   email: string;
 }

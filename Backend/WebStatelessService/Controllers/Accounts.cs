@@ -27,5 +27,18 @@ namespace WebStatelessService.Controllers
             }
             return Ok();
         }
+
+        [HttpGet("{accountId}")]
+        public async Task<IActionResult> Get(string accountId)
+        {
+            var serviceUri = new Uri("fabric:/ProjekatVezbeWeb/BankStatefulService");
+            var proxy = ServiceProxy.Create<IBankService>(serviceUri, new ServicePartitionKey(PartitionKeyHelper.ForAccount(accountId)));
+            var account = await proxy.GetAccount(accountId);
+            if (account == null)
+            {
+                return NotFound();
+            }
+            return Ok(account);
+        }
     }
 }

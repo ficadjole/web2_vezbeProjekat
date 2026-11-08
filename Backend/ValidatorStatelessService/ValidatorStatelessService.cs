@@ -115,65 +115,92 @@ namespace ValidatorStatelessService
             return results.SelectMany(r => r).OrderBy(b => b.Title).ToList();
         }
 
-        public async Task<ValidationResultDto> ValidateAsync(BuyBookRequestDTO buyBookRequestDTO)
+        public async Task<Result<PurchaseResponseDTO>> GetPurchase(Guid idempotencyKey)
+        {
+            if(idempotencyKey == Guid.Empty)
+            {
+                return Result.Failure<PurchaseResponseDTO>("Idempotency key is empty.");
+            }
+
+            var purchesOrcherProxy = ServiceProxy.Create<IPurchaseOrchestrator>(new Uri("fabric:/ProjekatVezbeWeb/PurchaseOrchestrator"), new ServicePartitionKey(PartitionKeyHelper.ForTransaction(idempotencyKey)));
+
+            var purchaseResponse = await purchesOrcherProxy.GetPurchaseAsync(idempotencyKey);
+
+            if (purchaseResponse == null)
+            {
+                return Result.Failure<PurchaseResponseDTO>("Purchase not found.");
+            }
+
+            return Result.Success(purchaseResponse);
+
+        }
+
+        public async Task<ValidationResultDto> PurchaseCencalltion(Guid idempotencyKey)
+        {
+            if (idempotencyKey == Guid.Empty)
+            {
+                return new ValidationResultDto
+                {
+                    IsValid = false,
+                    Message = "Idempotency key is empty."
+                };
+            }
+        
+            var purchesOrcherProxy = ServiceProxy.Create<IPurchaseOrchestrator>(new Uri("fabric:/ProjekatVezbeWeb/PurchaseOrchestrator"), new ServicePartitionKey(PartitionKeyHelper.ForTransaction(idempotencyKey)));
+
+            var cancellationResult = await purchesOrcherProxy.AddCancelRequest(idempotencyKey);
+
+            if (!cancellationResult)
+            {
+                return new ValidationResultDto
+                {
+                    IsValid = false,
+                    Message = "Purchase cancellation could not be completed."
+                };
+            }
+
+            return new ValidationResultDto
+            {
+                IsValid = true,
+                Message = "Purchase cancellation completed successfully."
+            };
+
+        }
+
+
+        public async Task<ValidationResultDto> ValidateAsync(BuyBookRequestDTO buyBookRequestDTO, Guid idempotencyKey)
         {
 
-            if (buyBookRequestDTO.Book.Title.Length < 5)
+            if(buyBookRequestDTO.UserId == string.Empty || buyBookRequestDTO.BookId == string.Empty)
             {
                 return new ValidationResultDto
                 {
                     IsValid = false,
-                    Message = "Title must be at least 5 characters long."
+                    Message = "UserId or Book is null."
                 };
             }
 
-            if (buyBookRequestDTO.Book.Author.Length < 5)
+            if(buyBookRequestDTO.Quantity <= 0)
             {
                 return new ValidationResultDto
                 {
                     IsValid = false,
-                    Message = "Author must be at least 5 characters long."
+                    Message = "Quantity must be greater than zero."
                 };
             }
 
-            if (buyBookRequestDTO.Book.Quantity <= 0)
+            var purchesOrcherProxy = ServiceProxy.Create<IPurchaseOrchestrator>(new Uri("fabric:/ProjekatVezbeWeb/PurchaseOrchestrator"), new ServicePartitionKey(PartitionKeyHelper.ForTransaction(idempotencyKey)));
+
+            var purchaseResult = await purchesOrcherProxy.StartPurchaseAsync(idempotencyKey, buyBookRequestDTO.UserId, buyBookRequestDTO.BookId, buyBookRequestDTO.Quantity);
+
+            if (purchaseResult == Guid.Empty)
             {
                 return new ValidationResultDto
                 {
                     IsValid = false,
-                    Message = "Quantity cannot be negative or zero."
+                    Message = "Purchase could not be completed."
                 };
             }
-
-            var proxy = ServiceProxy.Create<ILibraryService>(new Uri("fabric:/ProjekatVezbeWeb/LibraryStatefulService"), new ServicePartitionKey(0));
-
-            var result = await proxy.BookAvailableAsync(buyBookRequestDTO.Book.Id,buyBookRequestDTO.Book.Quantity);
-
-            if (result.Id == "")
-            {
-                    return new ValidationResultDto
-                    {
-                        IsValid = false,
-                        Message = "Book with the given ID is not available in the library."
-                    };
-            }
-
-            var bankProxy = ServiceProxy.Create<IBankService>(new Uri("fabric:/ProjekatVezbeWeb/BankStatefulService"), new ServicePartitionKey(0));
-
-            var paymentResult = await bankProxy.WithdrawAsync(buyBookRequestDTO.UserId, result.Price); //UserID == BankAccountID
-
-            if (!paymentResult)
-            {
-                return new ValidationResultDto
-                {
-                    IsValid = false,
-                    Message = "Payment failed. Insufficient funds."
-                };
-            }
-
-            var mailingProxy = ServiceProxy.Create<IMailingService>(new Uri("fabric:/ProjekatVezbeWeb/MailingStatefulService"), new ServicePartitionKey(0));
-
-            await mailingProxy.PublishEvent(buyBookRequestDTO);
 
             return new ValidationResultDto
             {

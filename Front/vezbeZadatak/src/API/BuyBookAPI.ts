@@ -1,22 +1,26 @@
 import axios from "axios";
 import type { BuyBookRequestDTO } from "../DTOs/BuyBookRequestDTO";
 import type { IBuyBookAPI } from "./IBuyBookAPI";
+import axiosRetry from "axios-retry";
 
 export const buyBookAPI: IBuyBookAPI = {
   async buyBook(dto: BuyBookRequestDTO): Promise<boolean> {
+    const idempotencyKey = crypto.randomUUID();
+
+    axiosRetry(axios, { retries: 3, retryDelay: axiosRetry.exponentialDelay });
+
     try {
       const res = await axios.post<boolean>(
-        "http://localhost:8453/api/Values",
+        "http://localhost:8453/api/Purchases",
         {
-          book: {
-            id: dto.id,
-            title: dto.title,
-            author: dto.author,
-            price: dto.price,
-            quantity: dto.quantity,
+          BookId: dto.id,
+          Quantity: dto.quantity,
+          UserId: dto.userId,
+        },
+        {
+          headers: {
+            "Idempotency-Key": idempotencyKey,
           },
-          userId: dto.userId,
-          email: dto.email,
         },
       );
 

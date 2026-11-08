@@ -10,9 +10,13 @@ namespace Common
     [DataContract]
     public class BuyBookRequestDTO
     {
-       [DataMember] public Book Book { get; set; } = new Book();
-       [DataMember] public string UserId { get; set; } = string.Empty;
+       [DataMember] 
+        public string UserId { get; set; } = string.Empty;
 
-        [DataMember] public string Email { get; set; } = string.Empty;
+        [DataMember] 
+        public string BookId { get; set; } = string.Empty;
+
+        [DataMember]
+        public int Quantity { get; set; } = 1;
     }
 }

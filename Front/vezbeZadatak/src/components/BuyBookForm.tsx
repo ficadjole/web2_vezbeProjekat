@@ -11,7 +11,7 @@ export default function BuyBookForm() {
   const [buyBookFormData, setBuyBookFormData] = useState({
     bookId: "",
     quantity: 1,
-    userId: 0,
+    userId: "",
   });
 
   const [message, setMessage] = useState<{
@@ -28,7 +28,7 @@ export default function BuyBookForm() {
       return;
     }
 
-    if (buyBookFormData.userId === 0) {
+    if (buyBookFormData.userId === "") {
       setMessage({ text: "Molimo izaberite korisnika.", type: "error" });
       return;
     }
@@ -42,9 +42,7 @@ export default function BuyBookForm() {
     }
 
     const selectedBook = Books.find((b) => b.id === buyBookFormData.bookId);
-    const selectedUser = Users.find(
-      (u) => u.userId === Number(buyBookFormData.userId),
-    );
+    const selectedUser = Users.find((u) => u.userId === buyBookFormData.userId);
 
     if (!selectedBook || !selectedUser) {
       setMessage({
@@ -74,7 +72,7 @@ export default function BuyBookForm() {
           type: "success",
         });
 
-        setBuyBookFormData({ bookId: "", quantity: 1, userId: 0 });
+        setBuyBookFormData({ bookId: "", quantity: 1, userId: "" });
       } else {
         setMessage({
           text: "Došlo je do greške na serveru prilikom obrade porudžbine.",
@@ -94,7 +92,7 @@ export default function BuyBookForm() {
     setBuyBookFormData((prev) => ({ ...prev, quantity: newCount }));
   };
 
-  const handleUserChange = (newUserId: number) => {
+  const handleUserChange = (newUserId: string) => {
     setBuyBookFormData((prev) => ({ ...prev, userId: newUserId }));
   };
 

@@ -85,7 +85,7 @@ namespace LibraryStatefulService
 
             var myDictionary = await this.StateManager.GetOrAddAsync<IReliableDictionary<string, long>>("myDictionary");
 
-          //await  AddData();
+            //await  AddData();
             await myDictionary.ClearAsync();
             while (true)
             {
@@ -189,39 +189,32 @@ namespace LibraryStatefulService
             }
         }
 
-        public async Task<Reservation> ReserveAsync(Guid txId)
-        {
-            var reservations = await this.StateManager.GetOrAddAsync<IReliableDictionary<Guid, Reservation>>("reservations");
-
-            using(var tx = this.StateManager.CreateTransaction())
-            {
-
-                var reservationResult = await reservations.TryGetValueAsync(tx, txId);
-
-                if (reservationResult.HasValue)
-                    throw new NoReservationException($"Reservation with txId: {txId} does not exist");
-
-                await tx.CommitAsync();
-
-                return reservationResult.Value;
-            }
-        }
-        public async Task ConfirmAsync(Guid txId, string bookId, int quantity)
+        public async Task<double> ReserveAsync(Guid txId, string bookId, int quantity)
         {
             var books = await this.StateManager.GetOrAddAsync<IReliableDictionary<string, Book>>("library");
             var reservations = await this.StateManager.GetOrAddAsync<IReliableDictionary<Guid, Reservation>>("reservations");
 
-            using(var tx = StateManager.CreateTransaction())
+            using (var tx = StateManager.CreateTransaction())
             {
-                var bookResult = await books.TryGetValueAsync(tx, bookId, LockMode.Update);
-
-                if(!bookResult.HasValue)
-                     throw new BookNotFoundException($"Book with ID: {bookId} not found");
 
                 var reservationsResult = await reservations.TryGetValueAsync(tx, txId, LockMode.Update);
 
                 if (reservationsResult.HasValue)
-                    return;
+                {
+                    if (reservationsResult.Value.Status == ReservationStatus.Reserved)
+                    {
+                        throw new InvalidOperationException($"Reservation with ID: {txId} is already reserved");
+                    }
+
+                    var book = await books.TryGetValueAsync(tx, reservationsResult.Value.BookId, LockMode.Update);
+
+                    return book.HasValue ? book.Value.Price : 0;
+                }
+
+                var bookResult = await books.TryGetValueAsync(tx, bookId, LockMode.Update);
+
+                if (!bookResult.HasValue)
+                    throw new BookNotFoundException($"Book with ID: {bookId} not found");
 
                 if (bookResult.Value.Quantity < quantity) throw new OutOfStockException($"Book with ID: {bookId} is out of stock");
 
@@ -232,20 +225,44 @@ namespace LibraryStatefulService
                 });
 
                 await reservations.AddAsync(tx, txId, new Reservation
-                {
-                    TxId = txId,
-                    BookId = bookId,
-                    Quantity = quantity,
-                    Price = (decimal)bookResult.Value.Price,
-                    Status = ReservationStatus.Reserved
-                });
+                (
+                    txId,
+                    bookId,
+                    quantity,
+                    (decimal)bookResult.Value.Price,
+                     ReservationStatus.Reserved
+                ));
 
                 await tx.CommitAsync();
-
-
-
+                return bookResult.Value.Price;
             }
+        }
 
+
+        public async Task ConfirmAsync(Guid txId)
+        {
+
+            var reservations = await this.StateManager.GetOrAddAsync<IReliableDictionary<Guid, Reservation>>("reservations");
+            var books = await this.StateManager.GetOrAddAsync<IReliableDictionary<string, Book>>("library");
+            var outbox = await this.StateManager.GetOrAddAsync<IReliableQueue<SaleConfirmed>>("outbox");
+
+            using(var tx = this.StateManager.CreateTransaction())
+            {
+                var reservationResult = await reservations.TryGetValueAsync(tx, txId, LockMode.Update);
+
+                if (!reservationResult.HasValue || reservationResult.Value.Status != ReservationStatus.Reserved)
+                    return;
+
+                var bookResult = await books.TryGetValueAsync(tx, reservationResult.Value.BookId, LockMode.Update);
+
+                await books.SetAsync(tx,reservationResult.Value.BookId, bookResult.Value with { Reserved = bookResult.Value.Reserved - reservationResult.Value.Quantity });
+
+                await reservations.SetAsync(tx, txId, reservationResult.Value with { Status = ReservationStatus.Confirmed });
+
+                await outbox.EnqueueAsync(tx, new SaleConfirmed(txId, reservationResult.Value.BookId, bookResult.Value.Price, DateTime.UtcNow));
+
+                await tx.CommitAsync();
+            }
 
         }
 
@@ -264,15 +281,39 @@ namespace LibraryStatefulService
                 }
                 else if (reservationResult.Value.Status == ReservationStatus.Reserved)
                 {
-                    await reservations.SetAsync(tx, txId, reservationResult.Value with { Status = ReservationStatus.Released });
 
                     var bookResult = await books.TryGetValueAsync(tx, reservationResult.Value.BookId);
 
-                    await books.SetAsync(tx, bookResult.Value.Id, bookResult.Value with { Quantity += reservationResult.Value.Quantity });
+                    if (!bookResult.HasValue)
+                        throw new BookNotFoundException($"Book with ID: {reservationResult.Value.BookId} not found");
 
+                    await books.SetAsync(tx, bookResult.Value.Id, bookResult.Value with { 
+                        Quantity = bookResult.Value.Quantity + reservationResult.Value.Quantity, 
+                        Reserved = bookResult.Value.Reserved - reservationResult.Value.Quantity 
+                    });
+
+                    await reservations.SetAsync(tx, txId, reservationResult.Value with { Status = ReservationStatus.Released });
                 }
 
                 await tx.CommitAsync();
+            }
+        }
+
+        public async Task<Book> GetBook(string bookId)
+        {
+            var libraryDictionary = this.StateManager.GetOrAddAsync<IReliableDictionary<string, Book>>("library");
+
+            using (var tx = this.StateManager.CreateTransaction())
+            {
+                var result = await libraryDictionary.Result.TryGetValueAsync(tx, bookId);
+                if (result.HasValue)
+                {
+                    return result.Value;
+                }
+                else
+                {
+                    throw new BookNotFoundException($"Book with ID: {bookId} not found");
+                }
             }
         }
     }
