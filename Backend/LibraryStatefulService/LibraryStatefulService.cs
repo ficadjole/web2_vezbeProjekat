@@ -80,29 +80,43 @@ namespace LibraryStatefulService
         /// <param name="cancellationToken">Canceled when Service Fabric needs to shut down this service replica.</param>
         protected override async Task RunAsync(CancellationToken cancellationToken)
         {
-            // TODO: Replace the following sample code with your own logic 
-            //       or remove this RunAsync override if it's not needed in your service.
+            var outbox = await this.StateManager.GetOrAddAsync<IReliableQueue<SaleConfirmed>>("outbox");
 
-            var myDictionary = await this.StateManager.GetOrAddAsync<IReliableDictionary<string, long>>("myDictionary");
-
-            //await  AddData();
-            await myDictionary.ClearAsync();
             while (true)
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                using (var tx = this.StateManager.CreateTransaction())
+                try
                 {
-                    var result = await myDictionary.TryGetValueAsync(tx, "Counter");
+                    using (var tx = this.StateManager.CreateTransaction())
+                    {
 
-                    ServiceEventSource.Current.ServiceMessage(this.Context, "Current Counter Value: {0}",
-                        result.HasValue ? result.Value.ToString() : "Value does not exist.");
 
-                    await myDictionary.AddOrUpdateAsync(tx, "Counter", 0, (key, value) => ++value);
+                        if (outbox != null)
+                        {
 
-                    // If an exception is thrown before calling CommitAsync, the transaction aborts, all changes are 
-                    // discarded, and nothing is saved to the secondary replicas.
-                    await tx.CommitAsync();
+                            var peekResult = await outbox.TryPeekAsync(tx);
+
+                            if (peekResult.HasValue)
+                            {
+                                var saleConfirmed = peekResult.Value;
+
+                                ServiceEventSource.Current.Message($"Sale confirmed: {saleConfirmed.BookId}, Price: {saleConfirmed.Price}, Timestamp: {saleConfirmed.OccurredAt}");
+
+                                var dequeueResult = await outbox.TryDequeueAsync(tx);
+
+                                if (dequeueResult.HasValue)
+                                    await tx.CommitAsync();
+
+                            }
+
+                        }
+
+                    }
+                }
+                catch(Exception ex)
+                {
+                    ServiceEventSource.Current.Message($"Error in RunAsync: {ex.Message}");
                 }
 
                 await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken);
